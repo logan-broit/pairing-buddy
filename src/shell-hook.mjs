@@ -8,6 +8,7 @@
 // started for it. bash and fish have no hook for keys, so Pair still tells typing from the pane's text there.
 // The hook also emits the OSC 133 marks that Pair's own pane emits (prompt, output, end with the exit code), for a
 // terminal that reads them; herdr ignores them today.
+// Reports get no terminal stdin: Node can restore its startup termios on exit, after the prompt has gone raw.
 
 // A word in single quotes: in bash and zsh a quote ends them and starts again; fish escapes with a backslash.
 const quote = text => `'${text.replaceAll("'", "'\\''")}'`;
@@ -19,12 +20,12 @@ _pair_n=0
 _pair_preexec() {
   _pair_cmd=$1
   (( ++_pair_n ))
-  ${report} $_pair_keys_flag --start --shell $$ --n $_pair_n --cmd "$1" >/dev/null 2>&1 &!
+  ${report} $_pair_keys_flag --start --shell $$ --n $_pair_n --cmd "$1" </dev/null >/dev/null 2>&1 &!
   print -n '\\e]133;C\\a'
 }
 _pair_precmd() {
   local code=$?
-  [[ -n $_pair_cmd ]] && { print -n "\\e]133;D;$code\\a"; ${report} $_pair_keys_flag --exit "$code" --shell $$ --n $_pair_n --cmd "$_pair_cmd" >/dev/null 2>&1 &! }
+  [[ -n $_pair_cmd ]] && { print -n "\\e]133;D;$code\\a"; ${report} $_pair_keys_flag --exit "$code" --shell $$ --n $_pair_n --cmd "$_pair_cmd" </dev/null >/dev/null 2>&1 &! }
   _pair_cmd=
   _pair_keys_at=0 # the first key at a new prompt is reported, however soon after the last
   print -n '\\e]133;A\\a'
@@ -52,7 +53,7 @@ if add-zsh-hook preexec _pair_preexec 2>/dev/null && add-zsh-hook precmd _pair_p
       && add-zle-hook-widget line-pre-redraw _pair_keys 2>/dev/null; then
     _pair_keys_flag=--keys
   fi
-  ${report} $_pair_keys_flag --ready --shell $$ >/dev/null 2>&1 &!
+  ${report} $_pair_keys_flag --ready --shell $$ </dev/null >/dev/null 2>&1 &!
 fi
 `;
 
@@ -68,12 +69,12 @@ _pair_preexec() {
   [[ $BASH_COMMAND == _pair_* ]] && return
   _pair_cmd=$(HISTTIMEFORMAT= history 1 | sed 's/^ *[0-9]* *//')
   (( ++_pair_n ))
-  ( ${report} --start --shell $$ --n $_pair_n --cmd "$_pair_cmd" >/dev/null 2>&1 & )
+  ( ${report} --start --shell $$ --n $_pair_n --cmd "$_pair_cmd" </dev/null >/dev/null 2>&1 & )
   printf '\\e]133;C\\a'
 }
 _pair_precmd() {
   local code=$?
-  [[ -n $_pair_cmd ]] && { printf '\\e]133;D;%s\\a' "$code"; ( ${report} --exit "$code" --shell $$ --n $_pair_n --cmd "$_pair_cmd" >/dev/null 2>&1 & ) }
+  [[ -n $_pair_cmd ]] && { printf '\\e]133;D;%s\\a' "$code"; ( ${report} --exit "$code" --shell $$ --n $_pair_n --cmd "$_pair_cmd" </dev/null >/dev/null 2>&1 & ) }
   _pair_cmd=
   printf '\\e]133;A\\a'
 }
@@ -84,7 +85,7 @@ if (( BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] >= 501 )); then
 else
   PROMPT_COMMAND="_pair_precmd\${PROMPT_COMMAND:+;$PROMPT_COMMAND};_pair_arm"
 fi
-( ${report} --ready --shell $$ >/dev/null 2>&1 & )
+( ${report} --ready --shell $$ </dev/null >/dev/null 2>&1 & )
 `;
 
 // fish names the command line in its own events, and runs neither for an empty line.
@@ -92,20 +93,20 @@ const FISH = report => `# pairing-buddy: report commands to Pair
 set -g _pair_n 0
 function _pair_preexec --on-event fish_preexec
     set -g _pair_n (math $_pair_n + 1)
-    command ${report} --start --shell $fish_pid --n $_pair_n --cmd $argv[1] >/dev/null 2>&1 &
+    command ${report} --start --shell $fish_pid --n $_pair_n --cmd $argv[1] </dev/null >/dev/null 2>&1 &
     disown
     printf '\\e]133;C\\a'
 end
 function _pair_postexec --on-event fish_postexec
     set -l code $status
     printf '\\e]133;D;%s\\a' $code
-    command ${report} --exit $code --shell $fish_pid --n $_pair_n --cmd $argv[1] >/dev/null 2>&1 &
+    command ${report} --exit $code --shell $fish_pid --n $_pair_n --cmd $argv[1] </dev/null >/dev/null 2>&1 &
     disown
 end
 function _pair_prompt --on-event fish_prompt
     printf '\\e]133;A\\a'
 end
-command ${report} --ready --shell $fish_pid >/dev/null 2>&1 &
+command ${report} --ready --shell $fish_pid </dev/null >/dev/null 2>&1 &
 disown
 `;
 

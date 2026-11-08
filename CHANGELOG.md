@@ -7,6 +7,11 @@ release is cut.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Shell reports leave terminal input alone.** Background reports from the bash, zsh and fish hooks now read from
+  `/dev/null`, so an exiting report cannot restore cooked input over a raw prompt and break editing or pasting.
+
 ### Added
 
 - **Rex terminals.** `pair` opens the chat beside its Rex terminal, and Pair watches terminals in that session; the Driver

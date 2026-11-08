@@ -23,7 +23,10 @@ the work board.
   another workspace) and the heuristics on pane text; the shell hooks (bash, and zsh and fish where installed): each
   command's start and end, numbered, a start that arrives after its end, nothing written to the terminal, zsh's keys
   to the socket at most twice a second (and only where zle's hooks are there), no polling of a hooked zsh pane at its
-  prompt, and an editor that opens late in a hooked command. The same against a fake herdr-core
+  prompt, and an editor that opens late in a hooked command. With Python 3 installed, a separate PTY regression runs
+  each hook's background ready/start/exit reports through the real CLI, holds them after Node's native startup,
+  switches cooked input to raw, and checks that report exit leaves it raw (bash, zsh and fish where installed).
+  The same against a fake herdr-core
   ([test/fake-core.mjs](../test/fake-core.mjs)): herdr told from herdr-core by the environment, the terminals of the
   chat's space with the Herdr window's focus and none without a window, a terminal started later, Pair's own
   terminal (its commands pasted with Enter, found again after a restart), `pair` starting the chat beside you or in

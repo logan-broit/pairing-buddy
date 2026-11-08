@@ -118,6 +118,8 @@ pair shell-hook fish | source    # fish, in config.fish
 ```
 
 `pair report --start|--exit N|--ready [--cmd TEXT] [--shell PID] [--n N] [--keys]` is what the hook runs; you never need to.
+The reports run in the background with stdin from `/dev/null`, so they cannot change the prompt's terminal input mode
+when they exit.
 
 ## Chat commands
 
